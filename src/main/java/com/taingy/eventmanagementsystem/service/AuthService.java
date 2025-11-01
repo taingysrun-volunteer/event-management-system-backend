@@ -8,6 +8,7 @@ import com.taingy.eventmanagementsystem.model.User;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
 import com.taingy.eventmanagementsystem.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -50,5 +51,9 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
         return new AuthRequests.AuthResponse(token);
+    }
+
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username).orElse(null);
     }
 }

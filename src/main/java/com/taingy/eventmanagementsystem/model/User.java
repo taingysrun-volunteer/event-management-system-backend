@@ -3,8 +3,10 @@ package com.taingy.eventmanagementsystem.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -32,11 +34,13 @@ public class User {
     @JsonIgnore
     private String passwordHash;
 
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false)
-    private Instant createdAt = Instant.now();
+    private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt = Instant.now();
+    private LocalDateTime updatedAt;
 
     public User() {}
 
