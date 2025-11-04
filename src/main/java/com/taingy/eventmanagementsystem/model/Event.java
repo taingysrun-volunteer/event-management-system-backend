@@ -1,11 +1,13 @@
 package com.taingy.eventmanagementsystem.model;
 
+import com.taingy.eventmanagementsystem.enums.EventStatus;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -13,11 +15,14 @@ import java.util.UUID;
 @Entity
 @Table(name = "events")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Event {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", nullable = false, updatable = false)
-    private UUID id = UUID.randomUUID();
+    private UUID id;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -43,8 +48,9 @@ public class Event {
     @Column(name = "capacity")
     private Integer capacity;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 50, nullable = false)
-    private String status;
+    private EventStatus status = EventStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false)
@@ -61,4 +67,7 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id")
     private User organizer;
+
+    @Version
+    private Long version;
 }

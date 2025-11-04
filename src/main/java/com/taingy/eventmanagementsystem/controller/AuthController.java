@@ -1,7 +1,6 @@
 package com.taingy.eventmanagementsystem.controller;
 
 import com.taingy.eventmanagementsystem.dto.AuthRequests;
-import com.taingy.eventmanagementsystem.dto.ResponseMessage;
 import com.taingy.eventmanagementsystem.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

@@ -1,5 +1,9 @@
 package com.taingy.eventmanagementsystem.service;
 
+import com.taingy.eventmanagementsystem.enums.RegistrationStatus;
+import com.taingy.eventmanagementsystem.exception.BadRequestException;
+import com.taingy.eventmanagementsystem.exception.DuplicateResourceException;
+import com.taingy.eventmanagementsystem.exception.ResourceNotFoundException;
 import com.taingy.eventmanagementsystem.model.Event;
 import com.taingy.eventmanagementsystem.model.Registration;
 import com.taingy.eventmanagementsystem.model.User;
@@ -25,15 +29,32 @@ public class RegistrationService {
     }
 
     public Optional<Registration> registerAttendee(UUID eventId, UUID userId) {
-        Optional<Event> eventOpt = eventRepository.findById(eventId);
-        if (eventOpt.isEmpty()) return Optional.empty();
+        // Check if event exists
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
 
-        User user = userRepository.findById(userId).orElse(null);
+        // Check if user exists
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        // Check if user is already registered for this event
+        Optional<Registration> existingRegistration = registrationRepository.findByUserAndEvent(user, event);
+        if (existingRegistration.isPresent()) {
+            Registration existing = existingRegistration.get();
+            // If registration is cancelled, allow re-registration
+            if (existing.getStatus() == RegistrationStatus.CANCELLED) {
+                existing.setStatus(RegistrationStatus.CONFIRMED);
+                return Optional.of(registrationRepository.save(existing));
+            }
+            // Otherwise, throw duplicate exception
+            throw new DuplicateResourceException("User is already registered for this event");
+        }
+
+        // Create new registration
         Registration registration = new Registration();
-        registration.setEvent(eventOpt.get());
+        registration.setEvent(event);
         registration.setUser(user);
-        registration.setStatus("CONFIRMED");
-        registration.setCreatedAt(LocalDateTime.now());
+        registration.setStatus(RegistrationStatus.CONFIRMED);
 
         return Optional.of(registrationRepository.save(registration));
     }
@@ -55,7 +76,7 @@ public class RegistrationService {
         Optional<Registration> regOpt = registrationRepository.findById(id);
         if (regOpt.isPresent()) {
             Registration reg = regOpt.get();
-            reg.setStatus("CANCELLED");
+            reg.setStatus(RegistrationStatus.CANCELLED);
             return Optional.of(registrationRepository.save(reg));
         }
         return Optional.empty();

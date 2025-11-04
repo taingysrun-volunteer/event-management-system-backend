@@ -3,14 +3,15 @@ package com.taingy.eventmanagementsystem.service;
 import com.taingy.eventmanagementsystem.dto.AuthRequests;
 import com.taingy.eventmanagementsystem.exception.CustomAuthException;
 import com.taingy.eventmanagementsystem.exception.UsernameExistException;
-import com.taingy.eventmanagementsystem.model.Role;
+import com.taingy.eventmanagementsystem.enums.Role;
 import com.taingy.eventmanagementsystem.model.User;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
 import com.taingy.eventmanagementsystem.security.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -30,11 +31,12 @@ public class AuthService {
             throw new UsernameExistException("Username is already in use");
         }
 
-        User user = new User(request.username(),
-                request.firstName(),
-                request.lastName(),
-                Role.USER,
-                passwordEncoder.encode(request.password()));
+        User user = new User();
+        user.setUsername(request.username());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setRole(Role.USER);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());

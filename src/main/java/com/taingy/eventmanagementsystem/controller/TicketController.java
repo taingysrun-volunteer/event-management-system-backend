@@ -1,11 +1,17 @@
 package com.taingy.eventmanagementsystem.controller;
 
+import com.taingy.eventmanagementsystem.dto.TicketResponseDTO;
+import com.taingy.eventmanagementsystem.exception.BadRequestException;
+import com.taingy.eventmanagementsystem.exception.ResourceNotFoundException;
+import com.taingy.eventmanagementsystem.mapper.TicketMapper;
 import com.taingy.eventmanagementsystem.model.Ticket;
 import com.taingy.eventmanagementsystem.service.TicketService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/tickets")
@@ -13,42 +19,47 @@ import java.util.*;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final TicketMapper ticketMapper;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, TicketMapper ticketMapper) {
         this.ticketService = ticketService;
+        this.ticketMapper = ticketMapper;
     }
 
     @PostMapping("/generate/{registrationId}")
-    public ResponseEntity<Ticket> generateTicket(@PathVariable UUID registrationId) {
-        return ticketService.createTicket(registrationId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.badRequest().build());
+    public ResponseEntity<TicketResponseDTO> generateTicket(@PathVariable UUID registrationId) {
+        Ticket ticket = ticketService.createTicket(registrationId)
+                .orElseThrow(() -> new BadRequestException("Unable to generate ticket. Registration may not exist or ticket already exists"));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ticketMapper.toResponseDTO(ticket));
     }
 
     @GetMapping
-    public ResponseEntity<List<Ticket>> getAllTickets() {
-        return ResponseEntity.ok(ticketService.getAllTickets());
+    public ResponseEntity<List<TicketResponseDTO>> getAllTickets() {
+        List<TicketResponseDTO> tickets = ticketService.getAllTickets().stream()
+                .map(ticketMapper::toResponseDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(tickets);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Ticket> getTicketById(@PathVariable UUID id) {
-        return ticketService.getTicketById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable UUID id) {
+        Ticket ticket = ticketService.getTicketById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
+        return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
     }
 
     @GetMapping("/qr/{qrCode}")
-    public ResponseEntity<Ticket> getTicketByQr(@PathVariable String qrCode) {
-        return ticketService.getTicketByQrCode(qrCode)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TicketResponseDTO> getTicketByQr(@PathVariable String qrCode) {
+        Ticket ticket = ticketService.getTicketByQrCode(qrCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "qrCode", qrCode));
+        return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
     }
 
     @PutMapping("/{id}/invalidate")
-    public ResponseEntity<Ticket> invalidateTicket(@PathVariable UUID id) {
-        return ticketService.invalidateTicket(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<TicketResponseDTO> invalidateTicket(@PathVariable UUID id) {
+        Ticket ticket = ticketService.invalidateTicket(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
+        return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
     }
 
 }
