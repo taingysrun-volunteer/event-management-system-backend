@@ -4,6 +4,8 @@ import com.taingy.eventmanagementsystem.model.Category;
 import com.taingy.eventmanagementsystem.model.Event;
 import com.taingy.eventmanagementsystem.repository.CategoryRepository;
 import com.taingy.eventmanagementsystem.repository.EventRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -27,6 +29,10 @@ public class EventService {
         return eventRepository.findAll();
     }
 
+    public Page<Event> getAllEvents(Pageable pageable) {
+        return eventRepository.findAll(pageable);
+    }
+
     public Optional<Event> getEventById(UUID id) {
         return eventRepository.findById(id);
     }
@@ -48,6 +54,10 @@ public class EventService {
 
     public List<Event> searchEvents(String keyword) {
         return eventRepository.findByTitleContainingIgnoreCase(keyword);
+    }
+
+    public Page<Event> searchEvents(String keyword, Pageable pageable) {
+        return eventRepository.findByTitleContainingIgnoreCase(keyword, pageable);
     }
 }
 

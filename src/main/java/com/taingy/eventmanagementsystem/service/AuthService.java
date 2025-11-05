@@ -4,6 +4,7 @@ import com.taingy.eventmanagementsystem.dto.AuthRequests;
 import com.taingy.eventmanagementsystem.exception.CustomAuthException;
 import com.taingy.eventmanagementsystem.exception.UsernameExistException;
 import com.taingy.eventmanagementsystem.enums.Role;
+import com.taingy.eventmanagementsystem.mapper.UserMapper;
 import com.taingy.eventmanagementsystem.model.User;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
 import com.taingy.eventmanagementsystem.security.JwtUtil;
@@ -11,19 +12,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
 
     @Autowired
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, UserMapper userMapper) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.userMapper = userMapper;
     }
 
     public AuthRequests.AuthResponse register(AuthRequests.RegisterRequest request) {
@@ -40,7 +42,7 @@ public class AuthService {
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
-        return new AuthRequests.AuthResponse(token);
+        return new AuthRequests.AuthResponse(token, userMapper.toResponseDTO(user));
     }
 
     public AuthRequests.AuthResponse login(AuthRequests.LoginRequest request) {
@@ -52,7 +54,7 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getUsername(), user.getRole().name());
-        return new AuthRequests.AuthResponse(token);
+        return new AuthRequests.AuthResponse(token, userMapper.toResponseDTO(user));
     }
 
     public User getUserByUsername(String username) {

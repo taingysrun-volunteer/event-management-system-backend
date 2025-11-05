@@ -15,6 +15,10 @@ import com.taingy.eventmanagementsystem.service.AuthService;
 import com.taingy.eventmanagementsystem.service.CategoryService;
 import com.taingy.eventmanagementsystem.service.EventService;
 import com.taingy.eventmanagementsystem.util.AuthUtil;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,11 +78,33 @@ public class EventController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EventResponseDTO>> getAllEvents() {
-        List<EventResponseDTO> events = eventService.getAllEvents().stream()
+    public ResponseEntity<Map<String, Object>> getAllEvents(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Event> eventPage = eventService.getAllEvents(pageable);
+
+        List<EventResponseDTO> events = eventPage.getContent().stream()
                 .map(eventMapper::toResponseDTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(events);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("events", events);
+        response.put("currentPage", eventPage.getNumber());
+        response.put("totalItems", eventPage.getTotalElements());
+        response.put("totalPages", eventPage.getTotalPages());
+        response.put("pageSize", eventPage.getSize());
+        response.put("hasNext", eventPage.hasNext());
+        response.put("hasPrevious", eventPage.hasPrevious());
+
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
@@ -143,11 +169,34 @@ public class EventController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<EventResponseDTO>> searchEvents(@RequestParam("q") String keyword) {
-        List<EventResponseDTO> events = eventService.searchEvents(keyword).stream()
+    public ResponseEntity<Map<String, Object>> searchEvents(
+            @RequestParam("q") String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Event> eventPage = eventService.searchEvents(keyword, pageable);
+
+        List<EventResponseDTO> events = eventPage.getContent().stream()
                 .map(eventMapper::toResponseDTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(events);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("events", events);
+        response.put("currentPage", eventPage.getNumber());
+        response.put("totalItems", eventPage.getTotalElements());
+        response.put("totalPages", eventPage.getTotalPages());
+        response.put("pageSize", eventPage.getSize());
+        response.put("hasNext", eventPage.hasNext());
+        response.put("hasPrevious", eventPage.hasPrevious());
+
+        return ResponseEntity.ok(response);
     }
 
 }

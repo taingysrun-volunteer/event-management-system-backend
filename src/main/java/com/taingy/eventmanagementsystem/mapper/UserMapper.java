@@ -16,6 +16,7 @@ public class UserMapper {
         return UserResponseDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .email(user.getEmail())
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
                 .role(user.getRole())
@@ -31,6 +32,7 @@ public class UserMapper {
 
         User user = new User();
         user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
         user.setFirstName(dto.getFirstName());
         user.setLastName(dto.getLastName());
         user.setRole(dto.getRole());
