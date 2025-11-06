@@ -71,6 +71,7 @@ public class GlobalExceptionHandler {
                 ex.getMessage(),
                 request.getRequestURI()
         );
+        ex.printStackTrace();
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
@@ -231,7 +232,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex,
                                                                        HttpServletRequest request) {
-        String message = "Database constraint violation";
+        String message = "";
         if (ex.getMessage().contains("unique")) {
             message = "A record with this value already exists";
         } else if (ex.getMessage().contains("foreign key")) {
@@ -247,6 +248,7 @@ public class GlobalExceptionHandler {
                 message,
                 request.getRequestURI()
         );
+        ex.printStackTrace();
         return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 
