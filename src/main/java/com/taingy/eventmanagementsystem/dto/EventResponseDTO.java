@@ -24,9 +24,11 @@ public class EventResponseDTO {
     private LocalDateTime endTime;
     private Double price;
     private Integer capacity;
+    private Integer availableSeats;
     private EventStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private CategoryResponseDTO category;
     private UserResponseDTO organizer;
+    private Boolean registered;
 }

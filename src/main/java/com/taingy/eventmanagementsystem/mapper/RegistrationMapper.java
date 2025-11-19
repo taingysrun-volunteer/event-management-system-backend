@@ -25,6 +25,7 @@ public class RegistrationMapper {
                 .event(eventMapper.toResponseDTO(registration.getEvent()))
                 .user(userMapper.toResponseDTO(registration.getUser()))
                 .status(registration.getStatus())
+                .note(registration.getNote())
                 .createdAt(registration.getCreatedAt())
                 .updatedAt(registration.getUpdatedAt())
                 .build();

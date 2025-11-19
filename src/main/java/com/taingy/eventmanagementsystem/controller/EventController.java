@@ -35,13 +35,19 @@ public class EventController {
     private final AuthService authService;
     private final CategoryService categoryService;
     private final EventMapper eventMapper;
+    private final com.taingy.eventmanagementsystem.service.RegistrationService registrationService;
+    private final com.taingy.eventmanagementsystem.mapper.RegistrationMapper registrationMapper;
 
     public EventController(EventService eventService, AuthService authService,
-                          CategoryService categoryService, EventMapper eventMapper) {
+                          CategoryService categoryService, EventMapper eventMapper,
+                          com.taingy.eventmanagementsystem.service.RegistrationService registrationService,
+                          com.taingy.eventmanagementsystem.mapper.RegistrationMapper registrationMapper) {
         this.eventService = eventService;
         this.authService = authService;
         this.categoryService = categoryService;
         this.eventMapper = eventMapper;
+        this.registrationService = registrationService;
+        this.registrationMapper = registrationMapper;
     }
 
     @PostMapping
@@ -79,6 +85,8 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<Map<String, Object>> getAllEvents(
+            @RequestParam(value = "search", required = false) String search,
+            @RequestParam(value = "categoryId", required = false) Integer categoryId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -89,10 +97,22 @@ public class EventController {
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Event> eventPage = eventService.getAllEvents(pageable);
+        Page<Event> eventPage = (search != null || categoryId != null) ? eventService.searchEvents(search, categoryId, pageable) : eventService.getAllEvents(pageable);
 
+        // Get current user and their registered event IDs
+        String username = AuthUtil.getCurrentUsername();
+        Set<UUID> registeredEventIds = new HashSet<>();
+        if (username != null) {
+            User currentUser = authService.getUserByUsername(username);
+            if (currentUser != null) {
+                registeredEventIds = registrationService.getRegisteredEventIdsForUser(currentUser.getId());
+            }
+        }
+
+        // Map events to DTOs with registration status
+        final Set<UUID> finalRegisteredEventIds = registeredEventIds;
         List<EventResponseDTO> events = eventPage.getContent().stream()
-                .map(eventMapper::toResponseDTO)
+                .map(event -> eventMapper.toResponseDTO(event, finalRegisteredEventIds.contains(event.getId())))
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
@@ -168,33 +188,38 @@ public class EventController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<Map<String, Object>> searchEvents(
-            @RequestParam("q") String keyword,
+    @GetMapping("/{id}/registrations")
+    public ResponseEntity<Map<String, Object>> getEventRegistrations(
+            @PathVariable UUID id,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir
     ) {
+        Event event = eventService.getEventById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", id));
+
         Sort sort = sortDir.equalsIgnoreCase("asc")
                 ? Sort.by(sortBy).ascending()
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Event> eventPage = eventService.searchEvents(keyword, pageable);
+        Page<com.taingy.eventmanagementsystem.model.Registration> registrationPage =
+                registrationService.getRegistrationsByEvent(id, pageable);
 
-        List<EventResponseDTO> events = eventPage.getContent().stream()
-                .map(eventMapper::toResponseDTO)
+        List<com.taingy.eventmanagementsystem.dto.RegistrationResponseDTO> registrations =
+                registrationPage.getContent().stream()
+                .map(registrationMapper::toResponseDTO)
                 .collect(Collectors.toList());
 
         Map<String, Object> response = new HashMap<>();
-        response.put("events", events);
-        response.put("currentPage", eventPage.getNumber());
-        response.put("totalItems", eventPage.getTotalElements());
-        response.put("totalPages", eventPage.getTotalPages());
-        response.put("pageSize", eventPage.getSize());
-        response.put("hasNext", eventPage.hasNext());
-        response.put("hasPrevious", eventPage.hasPrevious());
+        response.put("registrations", registrations);
+        response.put("currentPage", registrationPage.getNumber());
+        response.put("totalItems", registrationPage.getTotalElements());
+        response.put("totalPages", registrationPage.getTotalPages());
+        response.put("pageSize", registrationPage.getSize());
+        response.put("hasNext", registrationPage.hasNext());
+        response.put("hasPrevious", registrationPage.hasPrevious());
 
         return ResponseEntity.ok(response);
     }

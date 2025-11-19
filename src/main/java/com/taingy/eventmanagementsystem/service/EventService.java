@@ -56,8 +56,11 @@ public class EventService {
         return eventRepository.findByTitleContainingIgnoreCase(keyword);
     }
 
-    public Page<Event> searchEvents(String keyword, Pageable pageable) {
-        return eventRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+    public Page<Event> searchEvents(String keyword, Integer categoryId, Pageable pageable) {
+        if (keyword == null) {
+            keyword = "";
+        }
+        return eventRepository.findByTitleContainingIgnoreCaseOrCategoryId(keyword, categoryId, pageable);
     }
 }
 

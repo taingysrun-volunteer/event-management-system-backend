@@ -10,5 +10,5 @@ import java.util.UUID;
 
 public interface EventRepository extends JpaRepository<Event, UUID> {
     List<Event> findByTitleContainingIgnoreCase(String keyword);
-    Page<Event> findByTitleContainingIgnoreCase(String keyword, Pageable pageable);
+    Page<Event> findByTitleContainingIgnoreCaseOrCategoryId(String keyword, Integer categoryId, Pageable pageable);
 }

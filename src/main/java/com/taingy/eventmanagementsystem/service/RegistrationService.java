@@ -1,5 +1,7 @@
 package com.taingy.eventmanagementsystem.service;
 
+import com.taingy.eventmanagementsystem.dto.RegistrationRequestDTO;
+import com.taingy.eventmanagementsystem.dto.RegistrationUpdateDTO;
 import com.taingy.eventmanagementsystem.enums.RegistrationStatus;
 import com.taingy.eventmanagementsystem.exception.BadRequestException;
 import com.taingy.eventmanagementsystem.exception.DuplicateResourceException;
@@ -10,6 +12,8 @@ import com.taingy.eventmanagementsystem.model.User;
 import com.taingy.eventmanagementsystem.repository.EventRepository;
 import com.taingy.eventmanagementsystem.repository.RegistrationRepository;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -28,14 +32,14 @@ public class RegistrationService {
         this.userRepository = userRepository;
     }
 
-    public Optional<Registration> registerAttendee(UUID eventId, UUID userId) {
+    public Optional<Registration> registerAttendee(RegistrationRequestDTO request) {
         // Check if event exists
-        Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
+        Event event = eventRepository.findById(request.getEventId())
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", request.getEventId()));
 
         // Check if user exists
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", request.getUserId()));
 
         // Check if user is already registered for this event
         Optional<Registration> existingRegistration = registrationRepository.findByUserAndEvent(user, event);
@@ -44,6 +48,7 @@ public class RegistrationService {
             // If registration is cancelled, allow re-registration
             if (existing.getStatus() == RegistrationStatus.CANCELLED) {
                 existing.setStatus(RegistrationStatus.CONFIRMED);
+                existing.setNote(request.getNote());
                 return Optional.of(registrationRepository.save(existing));
             }
             // Otherwise, throw duplicate exception
@@ -55,6 +60,7 @@ public class RegistrationService {
         registration.setEvent(event);
         registration.setUser(user);
         registration.setStatus(RegistrationStatus.CONFIRMED);
+        registration.setNote(request.getNote());
 
         return Optional.of(registrationRepository.save(registration));
     }
@@ -66,6 +72,24 @@ public class RegistrationService {
     public List<Registration> getRegistrationsByEvent(UUID eventId) {
         Event event = eventRepository.findById(eventId).orElse(null);
         return registrationRepository.findByEvent(event);
+    }
+
+    public Page<Registration> getRegistrationsByEvent(UUID eventId, Pageable pageable) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event", "id", eventId));
+        return registrationRepository.findByEvent(event, pageable);
+    }
+
+    public List<Registration> getRegistrationsByUser(UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        return registrationRepository.findByUser(user);
+    }
+
+    public Page<Registration> getRegistrationsByUser(UUID userId, Pageable pageable) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        return registrationRepository.findByUser(user, pageable);
     }
 
     public Optional<Registration> getRegistrationById(UUID id) {
@@ -80,6 +104,61 @@ public class RegistrationService {
             return Optional.of(registrationRepository.save(reg));
         }
         return Optional.empty();
+    }
+
+    public Optional<Registration> updateRegistration(UUID id, RegistrationUpdateDTO updateDTO) {
+        Registration registration = registrationRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration", "id", id));
+
+        // Update status if provided
+        if (updateDTO.getStatus() != null) {
+            registration.setStatus(updateDTO.getStatus());
+        }
+
+        // Always update note (allows setting to null to clear the note)
+        registration.setNote(updateDTO.getNote());
+
+        registration =  registrationRepository.save(registration);
+
+        return Optional.of(registration);
+    }
+
+    public boolean isUserRegisteredForEvent(UUID userId, UUID eventId) {
+        if (userId == null || eventId == null) {
+            return false;
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        Event event = eventRepository.findById(eventId).orElse(null);
+
+        if (user == null || event == null) {
+            return false;
+        }
+
+        Optional<Registration> registration = registrationRepository.findByUserAndEvent(user, event);
+        return registration.isPresent() && registration.get().getStatus() != RegistrationStatus.CANCELLED;
+    }
+
+    public Set<UUID> getRegisteredEventIdsForUser(UUID userId) {
+        if (userId == null) {
+            return new HashSet<>();
+        }
+
+        User user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return new HashSet<>();
+        }
+
+        List<Registration> registrations = registrationRepository.findByUser(user);
+        Set<UUID> eventIds = new HashSet<>();
+
+        for (Registration registration : registrations) {
+            if (registration.getStatus() != RegistrationStatus.CANCELLED) {
+                eventIds.add(registration.getEvent().getId());
+            }
+        }
+
+        return eventIds;
     }
 
 }

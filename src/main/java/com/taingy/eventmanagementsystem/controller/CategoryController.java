@@ -17,7 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -61,11 +63,14 @@ public class CategoryController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponseDTO>> getAllCategories() {
+    public ResponseEntity<Map<String, List<CategoryResponseDTO>>> getAllCategories() {
         List<CategoryResponseDTO> categories = categoryService.getAllCategories().stream()
                 .map(categoryMapper::toResponseDTO)
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(categories);
+
+        Map<String, List<CategoryResponseDTO>> map = new HashMap<>();
+        map.put("categories", categories);
+        return ResponseEntity.ok(map);
     }
 
     @GetMapping("/{id}")

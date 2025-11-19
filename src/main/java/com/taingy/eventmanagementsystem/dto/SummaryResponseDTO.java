@@ -5,14 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegistrationRequestDTO {
-    private UUID eventId;
-    private UUID userId;
-    private String note;
+public class SummaryResponseDTO {
+    private Long totalEvents;
+    private Long totalUsers;
+    private Long totalCategories;
 }

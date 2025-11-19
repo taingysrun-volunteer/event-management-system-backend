@@ -36,6 +36,9 @@ public class Registration {
     @Column(name = "status", length = 50, nullable = false)
     private RegistrationStatus status = RegistrationStatus.CONFIRMED;
 
+    @Column(name = "note", columnDefinition = "TEXT")
+    private String note;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
