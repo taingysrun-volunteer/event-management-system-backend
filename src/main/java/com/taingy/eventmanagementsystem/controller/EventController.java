@@ -2,6 +2,7 @@ package com.taingy.eventmanagementsystem.controller;
 
 import com.taingy.eventmanagementsystem.dto.EventRequestDTO;
 import com.taingy.eventmanagementsystem.dto.EventResponseDTO;
+import com.taingy.eventmanagementsystem.enums.EventStatus;
 import com.taingy.eventmanagementsystem.enums.Role;
 import com.taingy.eventmanagementsystem.exception.BadRequestException;
 import com.taingy.eventmanagementsystem.exception.ForbiddenException;
@@ -87,6 +88,7 @@ public class EventController {
     public ResponseEntity<Map<String, Object>> getAllEvents(
             @RequestParam(value = "search", required = false) String search,
             @RequestParam(value = "categoryId", required = false) Integer categoryId,
+            @RequestParam(value = "status", required = false) EventStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
@@ -97,7 +99,7 @@ public class EventController {
                 : Sort.by(sortBy).descending();
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Event> eventPage = (search != null || categoryId != null) ? eventService.searchEvents(search, categoryId, pageable) : eventService.getAllEvents(pageable);
+        Page<Event> eventPage = eventService.searchEvents(search, status, categoryId, pageable);
 
         // Get current user and their registered event IDs
         String username = AuthUtil.getCurrentUsername();

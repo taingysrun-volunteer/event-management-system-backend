@@ -25,11 +25,14 @@ public class RegistrationService {
     private final RegistrationRepository registrationRepository;
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
-    public RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository, UserRepository userRepository) {
+    public RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository,
+                              UserRepository userRepository, EmailService emailService) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     public Optional<Registration> registerAttendee(RegistrationRequestDTO request) {
@@ -49,7 +52,12 @@ public class RegistrationService {
             if (existing.getStatus() == RegistrationStatus.CANCELLED) {
                 existing.setStatus(RegistrationStatus.CONFIRMED);
                 existing.setNote(request.getNote());
-                return Optional.of(registrationRepository.save(existing));
+                Registration savedRegistration = registrationRepository.save(existing);
+
+                // Send confirmation email
+                emailService.sendRegistrationConfirmation(savedRegistration);
+
+                return Optional.of(savedRegistration);
             }
             // Otherwise, throw duplicate exception
             throw new DuplicateResourceException("User is already registered for this event");
@@ -62,7 +70,12 @@ public class RegistrationService {
         registration.setStatus(RegistrationStatus.CONFIRMED);
         registration.setNote(request.getNote());
 
-        return Optional.of(registrationRepository.save(registration));
+        Registration savedRegistration = registrationRepository.save(registration);
+
+        // Send confirmation email
+        emailService.sendRegistrationConfirmation(savedRegistration);
+
+        return Optional.of(savedRegistration);
     }
 
     public List<Registration> getAllRegistrations() {
@@ -101,7 +114,12 @@ public class RegistrationService {
         if (regOpt.isPresent()) {
             Registration reg = regOpt.get();
             reg.setStatus(RegistrationStatus.CANCELLED);
-            return Optional.of(registrationRepository.save(reg));
+            Registration savedRegistration = registrationRepository.save(reg);
+
+            // Send cancellation email
+            emailService.sendRegistrationCancellation(savedRegistration);
+
+            return Optional.of(savedRegistration);
         }
         return Optional.empty();
     }

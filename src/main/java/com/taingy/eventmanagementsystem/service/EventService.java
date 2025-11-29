@@ -1,5 +1,6 @@
 package com.taingy.eventmanagementsystem.service;
 
+import com.taingy.eventmanagementsystem.enums.EventStatus;
 import com.taingy.eventmanagementsystem.model.Category;
 import com.taingy.eventmanagementsystem.model.Event;
 import com.taingy.eventmanagementsystem.repository.CategoryRepository;
@@ -52,15 +53,11 @@ public class EventService {
         return Optional.of(eventRepository.save(event));
     }
 
-    public List<Event> searchEvents(String keyword) {
-        return eventRepository.findByTitleContainingIgnoreCase(keyword);
-    }
-
-    public Page<Event> searchEvents(String keyword, Integer categoryId, Pageable pageable) {
+    public Page<Event> searchEvents(String keyword, EventStatus status, Integer categoryId, Pageable pageable) {
         if (keyword == null) {
             keyword = "";
         }
-        return eventRepository.findByTitleContainingIgnoreCaseOrCategoryId(keyword, categoryId, pageable);
+        return eventRepository.getEvents(keyword, status, categoryId, pageable);
     }
 }
 

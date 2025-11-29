@@ -61,6 +61,9 @@ class RegistrationControllerTest {
     @MockBean
     private com.taingy.eventmanagementsystem.repository.UserRepository userRepository;
 
+    @MockBean
+    private com.taingy.eventmanagementsystem.service.EmailService emailService;
+
     private Registration testRegistration;
     private RegistrationRequestDTO testRegistrationRequestDTO;
     private RegistrationResponseDTO testRegistrationResponseDTO;
