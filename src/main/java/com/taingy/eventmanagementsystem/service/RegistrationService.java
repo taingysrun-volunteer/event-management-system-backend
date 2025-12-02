@@ -7,9 +7,11 @@ import com.taingy.eventmanagementsystem.exception.BadRequestException;
 import com.taingy.eventmanagementsystem.exception.DuplicateResourceException;
 import com.taingy.eventmanagementsystem.exception.ResourceNotFoundException;
 import com.taingy.eventmanagementsystem.model.Event;
+import com.taingy.eventmanagementsystem.model.Notification;
 import com.taingy.eventmanagementsystem.model.Registration;
 import com.taingy.eventmanagementsystem.model.User;
 import com.taingy.eventmanagementsystem.repository.EventRepository;
+import com.taingy.eventmanagementsystem.repository.NotificationRepository;
 import com.taingy.eventmanagementsystem.repository.RegistrationRepository;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
 import org.springframework.data.domain.Page;
@@ -26,13 +28,16 @@ public class RegistrationService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final NotificationRepository notificationRepository;
 
     public RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository,
-                              UserRepository userRepository, EmailService emailService) {
+                              UserRepository userRepository, EmailService emailService,
+                              NotificationRepository notificationRepository) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.notificationRepository = notificationRepository;
     }
 
     public Optional<Registration> registerAttendee(RegistrationRequestDTO request) {
@@ -57,6 +62,9 @@ public class RegistrationService {
                 // Send confirmation email
                 emailService.sendRegistrationConfirmation(savedRegistration);
 
+                // Save notification
+                saveNotification(user, event, "You have successfully registered for event: " + event.getTitle(), "REGISTRATION");
+
                 return Optional.of(savedRegistration);
             }
             // Otherwise, throw duplicate exception
@@ -74,6 +82,9 @@ public class RegistrationService {
 
         // Send confirmation email
         emailService.sendRegistrationConfirmation(savedRegistration);
+
+        // Save notification
+        saveNotification(user, event, "You have successfully registered for event: " + event.getTitle(), "REGISTRATION");
 
         return Optional.of(savedRegistration);
     }
@@ -118,6 +129,10 @@ public class RegistrationService {
 
             // Send cancellation email
             emailService.sendRegistrationCancellation(savedRegistration);
+
+            // Save notification
+            saveNotification(reg.getUser(), reg.getEvent(),
+                "You have cancelled your registration for event: " + reg.getEvent().getTitle(), "CANCELLATION");
 
             return Optional.of(savedRegistration);
         }
@@ -177,6 +192,16 @@ public class RegistrationService {
         }
 
         return eventIds;
+    }
+
+    private void saveNotification(User user, Event event, String message, String type) {
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setEvent(event);
+        notification.setMessage(message);
+        notification.setType(type);
+        notification.setIsRead(false);
+        notificationRepository.save(notification);
     }
 
 }
