@@ -237,7 +237,7 @@ class EventControllerTest {
         List<Event> events = Arrays.asList(testEvent);
         Page<Event> eventPage = new PageImpl<>(events);
 
-        when(eventService.searchEvents(eq("Test"), eq(1), any(Pageable.class))).thenReturn(eventPage);
+        when(eventService.searchEvents(eq("Test"), eq(EventStatus.ACTIVE), eq(1), any(Pageable.class))).thenReturn(eventPage);
         when(eventMapper.toResponseDTO(any(Event.class), anyBoolean())).thenReturn(testEventResponseDTO);
         when(registrationService.getRegisteredEventIdsForUser(any())).thenReturn(new HashSet<>());
 
@@ -245,13 +245,14 @@ class EventControllerTest {
         mockMvc.perform(get("/api/events")
                         .param("search", "Test")
                         .param("categoryId", "1")
+                        .param("status", "ACTIVE")
                         .param("page", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.events", hasSize(1)))
                 .andExpect(jsonPath("$.events[0].title").value("Test Event"));
 
-        verify(eventService, times(1)).searchEvents(eq("Test"), eq(1), any(Pageable.class));
+        verify(eventService, times(1)).searchEvents(eq("Test"), eq(EventStatus.ACTIVE), eq(1), any(Pageable.class));
     }
 
     @Test
