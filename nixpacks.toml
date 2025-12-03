@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["maven", "jdk17"]
-
-[phases.build]
-cmds = ["./mvnw clean package -DskipTests"]
-
-[phases.start]
-cmd = "java -jar target/event-management-system-0.0.1-SNAPSHOT.jar"
