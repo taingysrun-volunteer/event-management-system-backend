@@ -14,6 +14,7 @@ import com.taingy.eventmanagementsystem.repository.EventRepository;
 import com.taingy.eventmanagementsystem.repository.NotificationRepository;
 import com.taingy.eventmanagementsystem.repository.RegistrationRepository;
 import com.taingy.eventmanagementsystem.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +31,9 @@ public class RegistrationService {
     private final EmailService emailService;
     private final NotificationRepository notificationRepository;
 
+    @Autowired(required = false)
+    private SendGridEmailService sendGridEmailService;
+
     public RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository,
                               UserRepository userRepository, EmailService emailService,
                               NotificationRepository notificationRepository) {
@@ -38,6 +42,22 @@ public class RegistrationService {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.notificationRepository = notificationRepository;
+    }
+
+    private void sendConfirmationEmail(Registration registration) {
+        if (sendGridEmailService != null) {
+            sendGridEmailService.sendRegistrationConfirmation(registration);
+        } else {
+            emailService.sendRegistrationConfirmation(registration);
+        }
+    }
+
+    private void sendCancellationEmail(Registration registration) {
+        if (sendGridEmailService != null) {
+            sendGridEmailService.sendRegistrationCancellation(registration);
+        } else {
+            emailService.sendRegistrationCancellation(registration);
+        }
     }
 
     public Optional<Registration> registerAttendee(RegistrationRequestDTO request) {
@@ -60,7 +80,7 @@ public class RegistrationService {
                 Registration savedRegistration = registrationRepository.save(existing);
 
                 // Send confirmation email
-                emailService.sendRegistrationConfirmation(savedRegistration);
+                sendConfirmationEmail(savedRegistration);
 
                 // Save notification
                 saveNotification(user, event, "You have successfully registered for event: " + event.getTitle(), "REGISTRATION");
@@ -81,7 +101,7 @@ public class RegistrationService {
         Registration savedRegistration = registrationRepository.save(registration);
 
         // Send confirmation email
-        emailService.sendRegistrationConfirmation(savedRegistration);
+        sendConfirmationEmail(savedRegistration);
 
         // Save notification
         saveNotification(user, event, "You have successfully registered for event: " + event.getTitle(), "REGISTRATION");
@@ -128,7 +148,7 @@ public class RegistrationService {
             Registration savedRegistration = registrationRepository.save(reg);
 
             // Send cancellation email
-            emailService.sendRegistrationCancellation(savedRegistration);
+            sendCancellationEmail(savedRegistration);
 
             // Save notification
             saveNotification(reg.getUser(), reg.getEvent(),
