@@ -22,7 +22,6 @@ import java.time.format.DateTimeFormatter;
  * Uses HTTP API instead of SMTP, bypassing port 25/465/587 restrictions
  */
 @Service
-@Profile("prod")
 public class SendGridEmailService {
 
     private static final Logger logger = LoggerFactory.getLogger(SendGridEmailService.class);

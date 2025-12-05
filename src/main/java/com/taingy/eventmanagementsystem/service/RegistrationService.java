@@ -30,18 +30,17 @@ public class RegistrationService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final NotificationRepository notificationRepository;
-
-    @Autowired(required = false)
-    private SendGridEmailService sendGridEmailService;
+    private final SendGridEmailService sendGridEmailService;
 
     public RegistrationService(RegistrationRepository registrationRepository, EventRepository eventRepository,
-                              UserRepository userRepository, EmailService emailService,
-                              NotificationRepository notificationRepository) {
+                               UserRepository userRepository, EmailService emailService,
+                               NotificationRepository notificationRepository, SendGridEmailService sendGridEmailService) {
         this.registrationRepository = registrationRepository;
         this.eventRepository = eventRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.notificationRepository = notificationRepository;
+        this.sendGridEmailService = sendGridEmailService;
     }
 
     private void sendConfirmationEmail(Registration registration) {
