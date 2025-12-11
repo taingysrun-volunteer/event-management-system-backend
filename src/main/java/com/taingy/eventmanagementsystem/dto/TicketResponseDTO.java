@@ -16,6 +16,7 @@ import java.util.UUID;
 public class TicketResponseDTO {
     private UUID id;
     private RegistrationResponseDTO registration;
+    private String ticketNumber;
     private String qrCode;
     private TicketStatus status;
     private LocalDateTime createdAt;

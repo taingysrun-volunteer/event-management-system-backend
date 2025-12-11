@@ -81,6 +81,26 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendOtpEmail(String email, String otpCode, String firstName) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(email);
+            helper.setSubject("Email Verification - " + appName);
+
+            String htmlContent = buildOtpEmailTemplate(email, otpCode, firstName);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            logger.info("OTP email sent to {}", email);
+        } catch (MessagingException e) {
+            logger.error("Failed to send OTP email", e);
+        }
+    }
+
     private String buildRegistrationEmailTemplate(User user, Event event, Registration registration) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
@@ -201,6 +221,72 @@ public class EmailService {
                 user.getFirstName() != null ? user.getFirstName() : user.getUsername(),
                 event.getTitle(),
                 eventDate,
+                appName
+        );
+    }
+
+    private String buildOtpEmailTemplate(String email, String otpCode, String firstName) {
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+                        .content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+                        .otp-box {
+                            background-color: white;
+                            padding: 20px;
+                            margin: 20px 0;
+                            border: 2px solid #4CAF50;
+                            border-radius: 8px;
+                            text-align: center;
+                        }
+                        .otp-code {
+                            font-size: 32px;
+                            font-weight: bold;
+                            color: #4CAF50;
+                            letter-spacing: 8px;
+                            font-family: 'Courier New', monospace;
+                        }
+                        .warning {
+                            color: #f44336;
+                            font-size: 14px;
+                            margin-top: 20px;
+                        }
+                        .footer { text-align: center; padding: 20px; color: #777; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Email Verification</h1>
+                        </div>
+                        <div class="content">
+                            <p>Dear %s,</p>
+                            <p>Thank you for registering with %s. To complete your registration, please verify your email address using the OTP code below:</p>
+
+                            <div class="otp-box">
+                                <p style="margin: 0; font-size: 14px; color: #666;">Your verification code is:</p>
+                                <div class="otp-code">%s</div>
+                                <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">This code will expire in 10 minutes</p>
+                            </div>
+
+                            <p>Enter this code in the verification page to activate your account.</p>
+                            <p class="warning">⚠️ If you did not request this verification code, please ignore this email.</p>
+                        </div>
+                        <div class="footer">
+                            <p>This email was sent by %s</p>
+                            <p>Please do not reply to this email.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """.formatted(
+                firstName != null && !firstName.isEmpty() ? firstName : "User",
+                appName,
+                otpCode,
                 appName
         );
     }

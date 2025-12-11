@@ -26,6 +26,9 @@ public class Ticket {
     @JoinColumn(name = "registration_id", nullable = false, unique = true)
     private Registration registration;
 
+    @Column(name = "ticket_number", unique = true, nullable = false)
+    private String ticketNumber;
+
     @Column(name = "qr_code", unique = true)
     private String qrCode;
 

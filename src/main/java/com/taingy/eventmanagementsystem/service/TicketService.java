@@ -30,8 +30,12 @@ public class TicketService {
         // Check if ticket already exists for this registration
         Optional<Ticket> existingTicket = ticketRepository.findByRegistration(registration);
         if (existingTicket.isPresent()) {
-            throw new DuplicateResourceException("Ticket already exists for this registration");
+            // Return existing ticket instead of throwing error
+            return existingTicket;
         }
+
+        // Generate unique ticket number (format: TKT-YYYYMMDD-XXXXX)
+        String ticketNumber = generateTicketNumber();
 
         // Generate unique QR code
         String qrCode = "QR-" + UUID.randomUUID();
@@ -39,6 +43,7 @@ public class TicketService {
         // Create new ticket
         Ticket ticket = new Ticket();
         ticket.setRegistration(registration);
+        ticket.setTicketNumber(ticketNumber);
         ticket.setQrCode(qrCode);
         ticket.setStatus(TicketStatus.VALID);
         // Let @CreationTimestamp and @UpdateTimestamp handle timestamps
@@ -58,6 +63,12 @@ public class TicketService {
         return ticketRepository.findByQrCode(qrCode);
     }
 
+    public Optional<Ticket> getTicketByRegistrationId(UUID registrationId) {
+        Registration registration = registrationRepository.findById(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Registration", "id", registrationId));
+        return ticketRepository.findByRegistration(registration);
+    }
+
     public Optional<Ticket> invalidateTicket(UUID id) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
@@ -66,6 +77,16 @@ public class TicketService {
         // Let @UpdateTimestamp handle timestamp automatically
 
         return Optional.of(ticketRepository.save(ticket));
+    }
+
+    /**
+     * Generates a unique ticket number in the format: TKT-YYYYMMDD-XXXXX
+     * where XXXXX is a random 5-digit number
+     */
+    private String generateTicketNumber() {
+        String datePart = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String randomPart = String.format("%05d", new Random().nextInt(100000));
+        return "TKT-" + datePart + "-" + randomPart;
     }
 
 }

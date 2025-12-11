@@ -51,6 +51,7 @@ class AuthControllerTest {
     private AuthRequests.LoginRequest loginRequest;
     private AuthRequests.ChangePasswordRequest changePasswordRequest;
     private AuthRequests.AuthResponse authResponse;
+    private AuthRequests.RegisterResponse registerResponse;
     private UserResponseDTO userResponseDTO;
 
     @BeforeEach
@@ -88,23 +89,26 @@ class AuthControllerTest {
                 "jwt-token-here",
                 userResponseDTO
         );
+
+        registerResponse = new AuthRequests.RegisterResponse(
+                "Registration successful. Please check your email for the verification code.",
+                "test@test.com"
+        );
     }
 
     @Test
     @WithAnonymousUser
     void register_Success() throws Exception {
         when(authService.register(any(AuthRequests.RegisterRequest.class)))
-                .thenReturn(authResponse);
+                .thenReturn(registerResponse);
 
         mockMvc.perform(post("/api/auth/register")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registerRequest)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.token").value("jwt-token-here"))
-                .andExpect(jsonPath("$.user.username").value("testuser"))
-                .andExpect(jsonPath("$.user.email").value("test@test.com"))
-                .andExpect(jsonPath("$.user.role").value("USER"));
+                .andExpect(jsonPath("$.message").value("Registration successful. Please check your email for the verification code."))
+                .andExpect(jsonPath("$.email").value("test@test.com"));
 
         verify(authService, times(1)).register(any(AuthRequests.RegisterRequest.class));
     }

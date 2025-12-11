@@ -7,5 +7,8 @@ public class AuthRequests {
     public record AuthResponse(String token, UserResponseDTO user) {}
     public record ChangePasswordRequest(String currentPassword, String newPassword) {}
     public record ResetPasswordRequest(String newPassword) {}
+    public record VerifyOtpRequest(String email, String otpCode) {}
+    public record ResendOtpRequest(String email) {}
+    public record RegisterResponse(String message, String email) {}
 
 }

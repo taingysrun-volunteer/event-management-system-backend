@@ -21,6 +21,7 @@ public class TicketMapper {
         return TicketResponseDTO.builder()
                 .id(ticket.getId())
                 .registration(registrationMapper.toResponseDTO(ticket.getRegistration()))
+                .ticketNumber(ticket.getTicketNumber())
                 .qrCode(ticket.getQrCode())
                 .status(ticket.getStatus())
                 .createdAt(ticket.getCreatedAt())

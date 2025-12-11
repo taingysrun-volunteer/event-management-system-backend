@@ -29,8 +29,8 @@ public class TicketController {
     @PostMapping("/generate/{registrationId}")
     public ResponseEntity<TicketResponseDTO> generateTicket(@PathVariable UUID registrationId) {
         Ticket ticket = ticketService.createTicket(registrationId)
-                .orElseThrow(() -> new BadRequestException("Unable to generate ticket. Registration may not exist or ticket already exists"));
-        return ResponseEntity.status(HttpStatus.CREATED).body(ticketMapper.toResponseDTO(ticket));
+                .orElseThrow(() -> new BadRequestException("Unable to generate ticket. Registration may not exist."));
+        return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
     }
 
     @GetMapping
@@ -45,6 +45,13 @@ public class TicketController {
     public ResponseEntity<TicketResponseDTO> getTicketById(@PathVariable UUID id) {
         Ticket ticket = ticketService.getTicketById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket", "id", id));
+        return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
+    }
+
+    @GetMapping("/registration/{registrationId}")
+    public ResponseEntity<TicketResponseDTO> getTicketByRegistration(@PathVariable UUID registrationId) {
+        Ticket ticket = ticketService.getTicketByRegistrationId(registrationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket", "registrationId", registrationId));
         return ResponseEntity.ok(ticketMapper.toResponseDTO(ticket));
     }
 
