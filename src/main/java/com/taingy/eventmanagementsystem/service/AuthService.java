@@ -176,4 +176,53 @@ public class AuthService {
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
     }
+
+    @Transactional
+    public AuthRequests.RegisterResponse forgotPassword(AuthRequests.ForgotPasswordRequest request) {
+        // Check if user exists
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BadRequestException("No account found with this email address"));
+
+        // Generate and send OTP for password reset
+        String otpCode = otpService.generateOtp(request.email());
+
+        // Use SendGrid if available, otherwise fall back to JavaMailSender
+        if (sendGridEmailService != null) {
+            sendGridEmailService.sendPasswordResetOtpEmail(request.email(), otpCode, user.getFirstName());
+        } else {
+            emailService.sendPasswordResetOtpEmail(request.email(), otpCode, user.getFirstName());
+        }
+
+        return new AuthRequests.RegisterResponse(
+                "Password reset code has been sent to your email.",
+                request.email()
+        );
+    }
+
+    @Transactional
+    public AuthRequests.RegisterResponse resetPassword(AuthRequests.ResetPasswordWithOtpRequest request) {
+        // Verify the OTP
+        boolean isValid = otpService.verifyOtp(request.email(), request.otpCode());
+        if (!isValid) {
+            throw new BadRequestException("Invalid or expired OTP code");
+        }
+
+        // Find user by email
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BadRequestException("User not found"));
+
+        // Validate new password
+        if (request.newPassword() == null || request.newPassword().isBlank()) {
+            throw new BadRequestException("New password is required");
+        }
+
+        // Update password
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        return new AuthRequests.RegisterResponse(
+                "Password has been reset successfully. You can now log in with your new password.",
+                request.email()
+        );
+    }
 }

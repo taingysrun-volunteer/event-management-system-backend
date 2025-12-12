@@ -10,5 +10,7 @@ public class AuthRequests {
     public record VerifyOtpRequest(String email, String otpCode) {}
     public record ResendOtpRequest(String email) {}
     public record RegisterResponse(String message, String email) {}
+    public record ForgotPasswordRequest(String email) {}
+    public record ResetPasswordWithOtpRequest(String email, String otpCode, String newPassword) {}
 
 }

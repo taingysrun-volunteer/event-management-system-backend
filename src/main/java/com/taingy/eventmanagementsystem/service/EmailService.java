@@ -101,6 +101,26 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendPasswordResetOtpEmail(String email, String otpCode, String firstName) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(email);
+            helper.setSubject("Password Reset - " + appName);
+
+            String htmlContent = buildPasswordResetOtpEmailTemplate(otpCode, firstName);
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+            logger.info("Password reset OTP email sent to {}", email);
+        } catch (MessagingException e) {
+            logger.error("Failed to send password reset OTP email", e);
+        }
+    }
+
     private String buildRegistrationEmailTemplate(User user, Event event, Registration registration) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MMMM dd, yyyy");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("hh:mm a");
@@ -275,6 +295,78 @@ public class EmailService {
 
                             <p>Enter this code in the verification page to activate your account.</p>
                             <p class="warning">⚠️ If you did not request this verification code, please ignore this email.</p>
+                        </div>
+                        <div class="footer">
+                            <p>This email was sent by %s</p>
+                            <p>Please do not reply to this email.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """.formatted(
+                firstName != null && !firstName.isEmpty() ? firstName : "User",
+                appName,
+                otpCode,
+                appName
+        );
+    }
+
+    private String buildPasswordResetOtpEmailTemplate(String otpCode, String firstName) {
+        return """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                        .header { background-color: #FF9800; color: white; padding: 20px; text-align: center; }
+                        .content { background-color: #f9f9f9; padding: 20px; border: 1px solid #ddd; }
+                        .otp-box {
+                            background-color: white;
+                            padding: 20px;
+                            margin: 20px 0;
+                            border: 2px solid #FF9800;
+                            border-radius: 8px;
+                            text-align: center;
+                        }
+                        .otp-code {
+                            font-size: 32px;
+                            font-weight: bold;
+                            color: #FF9800;
+                            letter-spacing: 8px;
+                            font-family: 'Courier New', monospace;
+                        }
+                        .warning {
+                            color: #f44336;
+                            font-size: 14px;
+                            margin-top: 20px;
+                            padding: 15px;
+                            background-color: #ffebee;
+                            border-left: 4px solid #f44336;
+                        }
+                        .footer { text-align: center; padding: 20px; color: #777; font-size: 12px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <h1>Password Reset Request</h1>
+                        </div>
+                        <div class="content">
+                            <p>Dear %s,</p>
+                            <p>We received a request to reset your password for your %s account. Use the OTP code below to reset your password:</p>
+
+                            <div class="otp-box">
+                                <p style="margin: 0; font-size: 14px; color: #666;">Your password reset code is:</p>
+                                <div class="otp-code">%s</div>
+                                <p style="margin: 10px 0 0 0; font-size: 12px; color: #999;">This code will expire in 10 minutes</p>
+                            </div>
+
+                            <p>Enter this code along with your new password to complete the password reset process.</p>
+
+                            <div class="warning">
+                                <strong>Security Warning:</strong> If you did not request a password reset, please ignore this email and ensure your account is secure. Your password will not be changed unless you complete the reset process with this code.
+                            </div>
                         </div>
                         <div class="footer">
                             <p>This email was sent by %s</p>
