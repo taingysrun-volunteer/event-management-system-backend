@@ -36,6 +36,7 @@ build/
 .env
 .env.local
 .env.production
+.env.aws
 .env.*.local
 
 ### Logs ###
@@ -45,4 +46,14 @@ logs/
 ### Application Specific ###
 application-local.properties
 
+### AWS ###
+.elasticbeanstalk/
+.ebextensions/
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+!.elasticbeanstalk/config.yml
+.env.aws.example
+AWS_DEPLOYMENT_GUIDE.md
+
 doc/
+scripts/
